@@ -1,66 +1,154 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>HubSpot CORS PoC</title>
+    <title>HubSpot CORS PoC - vukuff.github.io</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        button { background: #4285f4; color: white; border: none; padding: 10px 20px; cursor: pointer; }
-        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
-        .success { color: green; }
-        .error { color: red; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        #testBtn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 20px 0;
+        }
+        #testBtn:hover {
+            background: #2980b9;
+        }
+        #result {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 0 4px 4px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .hidden {
+            display: none;
+        }
+        #loading {
+            color: #7f8c8d;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
-    <h1>HubSpot CORS Test PoC</h1>
-    <p>Bu buton HubSpot API'sine istek gönderir:</p>
+    <h1>HubSpot CORS Vulnerability PoC</h1>
+    <p>This page demonstrates a CORS misconfiguration in HubSpot's API by sending a cross-origin request from <code>vukuff.github.io</code>.</p>
     
-    <button id="testBtn">TEST ET</button>
+    <button id="testBtn">TEST CORS CONFIGURATION</button>
     
-    <div id="resultContainer">
-        <h3>Sonuç:</h3>
-        <pre id="result">Sonuç burada görünecek...</pre>
+    <div id="loading" class="hidden">
+        <p>Sending request to HubSpot API...</p>
+    </div>
+    
+    <div id="resultContainer" class="hidden">
+        <h2>Results</h2>
+        <div id="result"></div>
     </div>
 
     <script>
         document.getElementById("testBtn").addEventListener("click", function() {
+            const btn = this;
             const resultEl = document.getElementById("result");
-            resultEl.innerHTML = "İstek gönderiliyor...";
+            const loadingEl = document.getElementById("loading");
+            const resultContainer = document.getElementById("resultContainer");
             
-            // HubSpot API Endpoint (Sizin verdiğiniz URL)
-            const url = "https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui";
+            btn.disabled = true;
+            loadingEl.classList.remove("hidden");
+            resultContainer.classList.add("hidden");
             
-            fetch(url, {
+            const targetUrl = "https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui";
+            
+            const startTime = performance.now();
+            
+            fetch(targetUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "text/plain",
-                    "Origin": "https://vukuff.github.io"  // GitHub Pages origininiz
+                    "Origin": "https://vukuff.github.io"
                 },
                 body: JSON.stringify({
-                    test: "CORS PoC from GitHub Pages"
+                    test: "CORS PoC",
+                    timestamp: new Date().toISOString(),
+                    source: "vukuff.github.io CORS Test"
                 })
             })
             .then(response => {
-                // HTTP Durumunu ve CORS başlıklarını göster
-                const corsHeader = response.headers.get("Access-Control-Allow-Origin");
-                resultEl.innerHTML = `
-                    <span class="success">✔ İstek Başarılı!</span><br>
-                    <b>Status:</b> ${response.status} ${response.statusText}<br>
-                    <b>CORS Header:</b> ${corsHeader}<br>
-                    <b>Credentials Allowed:</b> ${response.headers.get("Access-Control-Allow-Credentials")}
+                const endTime = performance.now();
+                const duration = (endTime - startTime).toFixed(2);
+                
+                let resultHTML = `
+                    <p><span class="success">✓ Request Successful</span></p>
+                    <p><strong>URL:</strong> ${targetUrl}</p>
+                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                    <p><strong>Response Time:</strong> ${duration}ms</p>
+                    <p><strong>Access-Control-Allow-Origin:</strong> <code>${response.headers.get("Access-Control-Allow-Origin") || "None"}</code></p>
+                    <p><strong>Access-Control-Allow-Credentials:</strong> <code>${response.headers.get("Access-Control-Allow-Credentials") || "None"}</code></p>
                 `;
-                return response.text();
-            })
-            .then(data => {
-                // Ham yanıtı göster
-                resultEl.innerHTML += `<br><br><b>Response Data:</b><br>${data}`;
-                console.log("Tam yanıt:", data);
+                
+                if (response.headers.get("Access-Control-Allow-Origin")) {
+                    resultHTML += `<p class="success">VULNERABLE: Server reflects arbitrary Origin</p>`;
+                }
+                
+                return response.text().then(data => {
+                    resultHTML += `
+                        <hr>
+                        <h3>Response Body:</h3>
+                        <pre>${escapeHtml(data.substring(0, 2000))}${data.length > 2000 ? "\n\n... (truncated)" : ""}</pre>
+                    `;
+                    return resultHTML;
+                });
             })
             .catch(error => {
-                resultEl.innerHTML = `<span class="error">✘ Hata: ${error.message}</span>`;
+                return `
+                    <p><span class="error">✗ Request Failed</span></p>
+                    <p><strong>Error:</strong> ${escapeHtml(error.message)}</p>
+                `;
+            })
+            .finally(() => {
+                loadingEl.classList.add("hidden");
+                resultContainer.classList.remove("hidden");
+                btn.disabled = false;
+            })
+            .then(html => {
+                resultEl.innerHTML = html;
             });
         });
+        
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
     </script>
-    
-    <p><small>GitHub Repo: <a href="https://github.com/vukuff/Cors-poc" target="_blank">vukuff/Cors-poc</a></small></p>
 </body>
 </html>
