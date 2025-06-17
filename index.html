@@ -3,19 +3,29 @@
 <head>
     <title>CORS PoC - vukuff.github.io</title>
     <script>
+        // Hedef API'ye istek gönder
         fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7", {
             method: "POST",
             headers: {
                 "Content-Type": "text/plain",
-                "Origin": "https://vukuff.github.io"  // Artık ana domain
+                "Origin": "https://vukuff.github.io"  // GitHub Pages origin'iniz
             },
-            body: JSON.stringify({test: "data"})
+            body: JSON.stringify({ 
+                project: "js",
+                message: "CORS test from vukuff.github.io" 
+            })
         })
-        .then(response => console.log("Response:", response))
+        .then(response => {
+            console.log("Status:", response.status);
+            console.log("CORS Header:", response.headers.get("Access-Control-Allow-Origin"));
+            return response.text();
+        })
+        .then(data => console.log("Response:", data))
         .catch(error => console.error("Error:", error));
     </script>
 </head>
 <body>
-    <h1>CORS Test Running on vukuff.github.io</h1>
+    <h1>CORS Test Running</h1>
+    <p>Check browser console (F12) for results.</p>
 </body>
 </html>
