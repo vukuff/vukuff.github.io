@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS PoC - vukuff.github.io</title>
+    <script>
+        fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7", {
+            method: "POST",
+            headers: {
+                "Content-Type": "text/plain",
+                "Origin": "https://vukuff.github.io"  // Artık ana domain
+            },
+            body: JSON.stringify({test: "data"})
+        })
+        .then(response => console.log("Response:", response))
+        .catch(error => console.error("Error:", error));
+    </script>
+</head>
+<body>
+    <h1>CORS Test Running on vukuff.github.io</h1>
+</body>
+</html>
