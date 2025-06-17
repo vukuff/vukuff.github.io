@@ -3,50 +3,109 @@
 <head>
     <title>HubSpot CORS Test</title>
     <style>
-        body { font-family: Arial; padding: 20px; }
-        pre { background: #f5f5f5; padding: 15px; }
-        .success { color: green; }
-        .error { color: red; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        #testBtn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        #testBtn:hover {
+            background-color: #45a049;
+        }
+        #result {
+            background-color: #f8f9fa;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            border-radius: 0 4px 4px 0;
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .cors-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
-    <h1>HubSpot CORS PoC</h1>
-    <button id="testBtn">TEST ET</button>
-    <pre id="result"></pre>
+    <h1>HubSpot CORS Test PoC</h1>
+    <p>Bu buton HubSpot API'sine istek gönderip CORS başlıklarını kontrol eder:</p>
+    
+    <button id="testBtn">TESTİ ÇALIŞTIR</button>
+    
+    <div id="result">
+        Sonuçlar burada görünecek...
+    </div>
 
     <script>
         document.getElementById("testBtn").addEventListener("click", function() {
             const resultEl = document.getElementById("result");
-            resultEl.innerHTML = "İstek gönderiliyor...";
-
-            // DÜZGÜN BODY OLMASI KRİTİK
+            resultEl.innerHTML = "İstek gönderiliyor, lütfen bekleyin...";
+            
             const postBody = {
                 project: "js",
                 logger: "javascript",
                 platform: "javascript",
-                message: "CORS test from GitHub Pages"
+                message: "CORS test from vukuff.github.io"
             };
 
             fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui", {
                 method: "POST",
                 headers: {
                     "Content-Type": "text/plain;charset=UTF-8",
-                    "Origin": "https://vukuff.github.io",
-                    "Accept": "*/*"
+                    "Origin": "https://vukuff.github.io"
                 },
-                body: JSON.stringify(postBody)  // Body EKLENDİ
+                body: JSON.stringify(postBody)
             })
             .then(response => {
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return response.text();
-            })
-            .then(data => {
-                resultEl.innerHTML = `<span class="success">BAŞARILI!</span>\n\n${data}`;
-                console.log("API Yanıtı:", data);
+                const corsOrigin = response.headers.get("Access-Control-Allow-Origin");
+                const corsCredentials = response.headers.get("Access-Control-Allow-Credentials");
+                
+                let resultHTML = `
+                    <p class="success">✅ BAŞARILI!</p>
+                    <p><strong>HTTP Durumu:</strong> ${response.status} ${response.statusText}</p>
+                    
+                    <div class="cors-info">
+                        <strong>CORS Başlıkları:</strong>
+                        <p>Access-Control-Allow-Origin: <code>${corsOrigin || "Yok"}</code></p>
+                        <p>Access-Control-Allow-Credentials: <code>${corsCredentials || "Yok"}</code></p>
+                    </div>
+                `;
+
+                if (corsOrigin === "https://vukuff.github.io") {
+                    resultHTML += `<p class="success">⚠️ CORS ZAFİYETİ: Sunucu origin'i yansıtıyor!</p>`;
+                }
+
+                return response.text().then(data => {
+                    resultHTML += `
+                        <p><strong>Yanıt Verisi:</strong></p>
+                        <pre>${data.substring(0, 500)}${data.length > 500 ? "... (kısaltıldı)" : ""}</pre>
+                    `;
+                    return resultHTML;
+                });
             })
             .catch(error => {
-                resultEl.innerHTML = `<span class="error">HATA: ${error.message}</span>`;
-                console.error("Hata detayı:", error);
+                return `<p style="color:red;">⛔ HATA: ${error.message}</p>`;
+            })
+            .then(html => {
+                resultEl.innerHTML = html;
             });
         });
     </script>
