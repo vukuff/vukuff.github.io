@@ -4,110 +4,142 @@
     <title>HubSpot CORS Test</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            line-height: 1.6;
+            background-color: #f5f5f5;
         }
         #testBtn {
-            background-color: #4CAF50;
+            background: #2c3e50;
             color: white;
             border: none;
             padding: 12px 24px;
             font-size: 16px;
-            cursor: pointer;
             border-radius: 4px;
-            margin-bottom: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
         }
         #testBtn:hover {
-            background-color: #45a049;
+            background: #1a252f;
         }
         #result {
-            background-color: #f8f9fa;
-            border-left: 4px solid #4CAF50;
-            padding: 15px;
             margin-top: 20px;
-            white-space: pre-wrap;
-            border-radius: 0 4px 4px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .success {
-            color: #4CAF50;
+            color: #27ae60;
             font-weight: bold;
-            font-size: 18px;
         }
-        .cors-info {
-            margin-top: 15px;
+        .error {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .header-info {
+            background: #ecf0f1;
             padding: 10px;
-            background-color: #e8f5e9;
-            border-radius: 4px;
+            border-radius: 3px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        pre {
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
         }
     </style>
 </head>
 <body>
     <h1>HubSpot CORS Test PoC</h1>
-    <p>Bu buton HubSpot API'sine istek gönderip CORS başlıklarını kontrol eder:</p>
-    
     <button id="testBtn">TESTİ ÇALIŞTIR</button>
-    
     <div id="result">
         Sonuçlar burada görünecek...
     </div>
 
     <script>
-        document.getElementById("testBtn").addEventListener("click", function() {
+        document.getElementById("testBtn").addEventListener("click", async function() {
             const resultEl = document.getElementById("result");
-            resultEl.innerHTML = "İstek gönderiliyor, lütfen bekleyin...";
+            resultEl.innerHTML = "<p>İstek gönderiliyor...</p>";
             
-            const postBody = {
-                project: "js",
-                logger: "javascript",
-                platform: "javascript",
-                message: "CORS test from vukuff.github.io"
-            };
-
-            fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "text/plain;charset=UTF-8",
-                    "Origin": "https://vukuff.github.io"
-                },
-                body: JSON.stringify(postBody)
-            })
-            .then(response => {
-                const corsOrigin = response.headers.get("Access-Control-Allow-Origin");
-                const corsCredentials = response.headers.get("Access-Control-Allow-Credentials");
-                
-                let resultHTML = `
-                    <p class="success">✅ BAŞARILI!</p>
-                    <p><strong>HTTP Durumu:</strong> ${response.status} ${response.statusText}</p>
-                    
-                    <div class="cors-info">
-                        <strong>CORS Başlıkları:</strong>
-                        <p>Access-Control-Allow-Origin: <code>${corsOrigin || "Yok"}</code></p>
-                        <p>Access-Control-Allow-Credentials: <code>${corsCredentials || "Yok"}</code></p>
-                    </div>
-                `;
-
-                if (corsOrigin === "https://vukuff.github.io") {
-                    resultHTML += `<p class="success">⚠️ CORS ZAFİYETİ: Sunucu origin'i yansıtıyor!</p>`;
-                }
-
-                return response.text().then(data => {
-                    resultHTML += `
-                        <p><strong>Yanıt Verisi:</strong></p>
-                        <pre>${data.substring(0, 500)}${data.length > 500 ? "... (kısaltıldı)" : ""}</pre>
-                    `;
-                    return resultHTML;
+            try {
+                // 1. Önce OPTIONS (Preflight) isteği gönder
+                const optionsResponse = await fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7", {
+                    method: "OPTIONS",
+                    headers: {
+                        "Origin": "https://vukuff.github.io",
+                        "Access-Control-Request-Method": "POST",
+                        "Access-Control-Request-Headers": "content-type"
+                    }
                 });
-            })
-            .catch(error => {
-                return `<p style="color:red;">⛔ HATA: ${error.message}</p>`;
-            })
-            .then(html => {
-                resultEl.innerHTML = html;
-            });
+
+                // 2. Preflight yanıtını kontrol et
+                let resultHTML = "<h3 class='success'>✓ OPTIONS (Preflight) Yanıtı</h3>";
+                resultHTML += "<div class='header-info'>";
+                
+                const corsHeaders = [
+                    'Access-Control-Allow-Origin',
+                    'Access-Control-Allow-Credentials',
+                    'Access-Control-Allow-Methods',
+                    'Access-Control-Allow-Headers'
+                ];
+                
+                corsHeaders.forEach(header => {
+                    const value = optionsResponse.headers.get(header);
+                    resultHTML += `<p><strong>${header}:</strong> <code>${value || 'Yok'}</code></p>`;
+                });
+                resultHTML += "</div>";
+                
+                // 3. Asıl POST isteğini gönder
+                const postResponse = await fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/plain;charset=UTF-8",
+                        "Origin": "https://vukuff.github.io"
+                    },
+                    body: JSON.stringify({
+                        project: "js",
+                        logger: "javascript",
+                        message: "CORS test"
+                    })
+                });
+                
+                // 4. POST yanıtını işle
+                resultHTML += "<h3 class='success'>✓ POST Yanıtı</h3>";
+                resultHTML += `<p><strong>Status:</strong> ${postResponse.status} ${postResponse.statusText}</p>`;
+                resultHTML += "<div class='header-info'>";
+                
+                // POST yanıtındaki CORS başlıklarını kontrol et
+                corsHeaders.forEach(header => {
+                    const value = postResponse.headers.get(header);
+                    resultHTML += `<p><strong>${header}:</strong> <code>${value || 'Yok'}</code></p>`;
+                });
+                resultHTML += "</div>";
+                
+                // 5. Response body'i göster
+                const responseData = await postResponse.text();
+                resultHTML += `<h4>Yanıt Verisi:</h4><pre>${escapeHtml(responseData.substring(0, 1000))}</pre>`;
+                
+                resultEl.innerHTML = resultHTML;
+                
+            } catch (error) {
+                resultEl.innerHTML = `<p class='error'>⛔ Hata: ${error.message}</p>`;
+                console.error("Hata detayı:", error);
+            }
         });
+        
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
     </script>
 </body>
 </html>
