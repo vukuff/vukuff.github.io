@@ -1,30 +1,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CORS Test - vukuff.github.io</title>
+    <title>Coinbase Security Test</title>
     <script>
-        async function corsTest() {
-            const url = 'https://walletbot.me/api/v1/accounts/';
-            try {
-                const response = await fetch(url, {
-                    method: 'GET',
-                    credentials: 'include',  // Cookie gönderimi için
-                    headers: {
-                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIs...',  // Orijinal token
-                        'Origin': 'https://vukuff.github.io'
-                    }
-                });
-                const data = await response.json();
-                document.getElementById('result').innerText = JSON.stringify(data, null, 2);
-            } catch (error) {
-                document.getElementById('result').innerText = `Hata: ${error.message}`;
-            }
+        // XSS/CSRF Test Fonksiyonu
+        function testCoinbase() {
+            fetch('https://sessions.coinbase.com/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Origin': 'https://vukuff.github.io'
+                },
+                body: JSON.stringify({test: "security_test_from_github"})
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById("result").innerText = data;
+                console.log("Test Sonucu:", data);
+            })
+            .catch(error => {
+                console.error("Hata:", error);
+            });
         }
     </script>
 </head>
 <body>
-    <h1>CORS Testi</h1>
-    <button onclick="corsTest()">İsteği Gönder</button>
+    <h1>Coinbase Security Test</h1>
+    <button onclick="testCoinbase()">Testi Başlat</button>
     <pre id="result"></pre>
 </body>
 </html>
